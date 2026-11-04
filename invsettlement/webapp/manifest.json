@@ -149,6 +149,18 @@
                     "route": "ZC_ROC_INV_SET_IObjectPage"
                   }
                 }
+              },
+              "content": {
+                "header": {
+                  "actions": {
+                    "ZGETPOGR": {
+                      "press": "com.roc.invsettlement.ext.controller.ZPOGETGR.triggerGetPOGR",
+                      "visible": "com.roc.invsettlement.ext.controller.ZPOGETGR.enabledGetPOGR",
+                      "enabled": true,
+                      "text": "ZGETPOGR"
+                    }
+                  }
+                }
               }
             }
           }
