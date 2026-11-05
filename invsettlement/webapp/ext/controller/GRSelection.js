@@ -96,14 +96,14 @@ sap.ui.define([
                             new VBox({
                                 width: "50%",
                                 items: [
-                                    new Label({text: "PO Number"}),
+                                    new Label({ text: "PO Number" }),
                                     oPOInput
                                 ]
                             }),
                             new VBox({
                                 width: "50%",
                                 items: [
-                                    new Label({text: "Material"}),
+                                    new Label({ text: "Material" }),
                                     oMaterialInput
                                 ]
                             })
@@ -114,14 +114,14 @@ sap.ui.define([
                             new VBox({
                                 width: "50%",
                                 items: [
-                                    new Label({text: "Plant"}),
+                                    new Label({ text: "Plant" }),
                                     oPlantInput
                                 ]
                             }),
                             new VBox({
                                 width: "50%",
                                 items: [
-                                    new Label({text: "Vendor"}),
+                                    new Label({ text: "Vendor" }),
                                     oVendorInput
                                 ]
                             })
@@ -129,7 +129,7 @@ sap.ui.define([
                     }),
                     new VBox({
                         items: [
-                            new Label({text: "Posting Date"}),
+                            new Label({ text: "Posting Date" }),
                             oDateInput
                         ]
                     })
@@ -141,12 +141,12 @@ sap.ui.define([
                 mode: "MultiSelect",
                 includeItemInSelection: true,
                 columns: [
-                    new Column({header: new Text({text: "Material Document"})}),
-                    new Column({header: new Text({text: "Item"})}),
-                    new Column({header: new Text({text: "PO"})}),
-                    new Column({header: new Text({text: "Material"})}),
-                    new Column({header: new Text({text: "Plant"})}),
-                    new Column({header: new Text({text: "Quantity"})})
+                    new Column({ header: new Text({ text: "Material Document" }) }),
+                    new Column({ header: new Text({ text: "Item" }) }),
+                    new Column({ header: new Text({ text: "PO" }) }),
+                    new Column({ header: new Text({ text: "Material" }) }),
+                    new Column({ header: new Text({ text: "Plant" }) }),
+                    new Column({ header: new Text({ text: "Quantity" }) })
                 ]
             });
 
@@ -156,12 +156,12 @@ sap.ui.define([
                 path: "result>/items",
                 template: new ColumnListItem({
                     cells: [
-                        new Text({text: "{result>MBLNR}"}),
-                        new Text({text: "{result>MJAHR}"}),
-                        new Text({text: "{result>EBELN}"}),
-                        new Text({text: "{result>MATNR}"}),
-                        new Text({text: "{result>WERKS}"}),
-                        new Text({text: "{result>MENGE}"})
+                        new Text({ text: "{result>MBLNR}" }),
+                        new Text({ text: "{result>MJAHR}" }),
+                        new Text({ text: "{result>EBELN}" }),
+                        new Text({ text: "{result>MATNR}" }),
+                        new Text({ text: "{result>WERKS}" }),
+                        new Text({ text: "{result>MENGE}" })
                     ]
                 })
             });
@@ -256,7 +256,7 @@ sap.ui.define([
         },
 
         // 确认选择
-        _confirmGR: function () {
+        _confirmGR: async function () {
 
             const aSelectedItems = oTable.getSelectedItems();
 
@@ -265,20 +265,60 @@ sap.ui.define([
                 return;
             }
 
+            // 1. 获取选中的 GR 数据
             const aSelectedGR = aSelectedItems.map(function (oItem) {
-                return oItem.getBindingContext("result").getObject();
+                return oItem
+                    .getBindingContext("result")
+                    .getObject();
             });
 
-            console.log("Selected GR:", aSelectedGR);
+            // 2. 转换为 RAP Action 接收的结构
+           // const aPayload = aSelectedGR.map(function (oGR) {
+           //     return {
+           //         MBLNR: oGR.MaterialDocument,
+           //         MJAHR: oGR.MaterialDocumentYear,
+           //         ZEILE: oGR.MaterialDocumentItem,
+           //         EBELN: oGR.PurchaseOrder,
+           //         EBELP: oGR.PurchaseOrderItem,
+           //         MATNR: oGR.Material,
+           //         WERKS: oGR.Plant,
+           //         MENGE: String(oGR.QuantityInEntryUnit),
+           //         MEINS: oGR.EntryUnit
+           //     };
+           // });
 
-            // TODO: 调用当前 Header Context 对应的 RAP Action
-            // 将 GR 数据写入当前 Draft
-
-            MessageToast.show(
-                "已选择 " + aSelectedGR.length + " 条 GR Item"
-            );
-
-            oDialog.close();
+            try {
+                // 3. 获取当前 Header Draft Context
+                const oModel = oHeaderContext.getModel();
+                // 4. 创建 Header 绑定 Action
+                const oAction = oModel.bindContext(
+                    "com.sap.gateway.srvd.zs_roc_inv_manage.v0001.addGRItems(...)",
+                    oHeaderContext
+                );
+                // 5. 传递 JSON 参数
+                oAction.setParameter(
+                    "SelectedGRJson",
+                    JSON.stringify(aSelectedGR)
+                );
+                // 6. 执行 RAP Action
+                await oAction.invoke("$auto");
+                // 7. 刷新当前 Header 下的 Item 数据
+                await oHeaderContext.requestSideEffects([
+                    {
+                        $NavigationPropertyPath: "_invItem"
+                    }
+                ]);
+                // 8. 关闭 Dialog
+                oDialog.close();
+                MessageToast.show(
+                    "成功添加 " + aSelectedGR.length + " 条 GR Item"
+                );
+            } catch (oError) {
+                console.error("addGRItems Error:", oError);
+                MessageBox.error(
+                    "添加 GR Item 失败：" + oError.message
+                );
+            }
         }
     };
 });

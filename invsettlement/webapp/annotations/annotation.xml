@@ -13,6 +13,10 @@
     </edmx:Reference>
     <edmx:DataServices>
         <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="local">
+
+         <Annotations Target="com.sap.gateway.srvd.zs_roc_inv_manage.v0001.doSubmit">
+              <Annotation Term="com.sap.vocabularies.Common.v1.IsActionCritical" Bool="true"/>
+        </Annotations>
         </Schema>
     </edmx:DataServices>
 </edmx:Edmx>
